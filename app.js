@@ -29,8 +29,15 @@ function parse_nodes(map){
     var xml = parsr.parseFromString(map, 'text/xml');
     var results = evaluateXPath(xml, "/osm/node");
     console.log(results);
-    var nd = results[0];
-    console.log(nd.getAttribute("id"));
+    var id, lon, lat, nd;
+    for(var i=0; i<results.length; i++){
+        nd = results[i];
+        id = parseInt(nd.getAttribute("id"));
+        lon = parseFloat(nd.getAttribute("lon"));
+        lat = parseFloat(nd.getAttribute("lat"));
+        nodes[id] = new Float32Array([lat, lon]);
+    }
+    console.log(nodes);
 }
 
 
@@ -61,9 +68,27 @@ var points = [  [0,0],
                 [rectLength/2, rectWidth],
                 [rectLength, rectWidth],
                 [rectLength, 0]];
+/*var textGeom = new THREE.TextGeometry("Hello", {size: 30, height: 4, curveSegments: 3,
+            weight: "bold", style: "normal",
+            bevelThickness: 1, bevelSize: 2, bevelEnabled: true,
+            material: 0, extrudeMaterial: 1,
+            font: 'helvetiker'});
+var textMesh = new THREE.Mesh( textGeom, new THREE.MeshBasicMaterial( { color: color } ) ) ;*/
+var shapes, geom, mat, textMesh;
+
+shapes = THREE.FontUtils.generateShapes( "Hello world", {
+  font: "helvetiker",
+  weight: "bold",
+  size: 10
+} );
+shapes.computeBoundingBox();
+geom = new THREE.ShapeGeometry( shapes );
+mat = new THREE.MeshBasicMaterial({color: 0xaa00ff});
+textMesh = new THREE.Mesh( geom, mat );
 
 var mshape = CShape(points, 0xaa00ff);
 scene.add( mshape );
+scene.add( textMesh );
 camera.position.z = 5;
 var x = 0;
 function render() {
