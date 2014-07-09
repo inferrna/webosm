@@ -76,12 +76,11 @@ var points = [  [0,0],
 var textMesh = new THREE.Mesh( textGeom, new THREE.MeshBasicMaterial( { color: color } ) ) ;*/
 var shapes, geom, mat, textMesh;
 
-shapes = THREE.FontUtils.generateShapes( "Hello world", {
-  font: "helvetiker",
-  weight: "bold",
-  size: 10
+shapes = THREE.FontUtils.generateShapes( "Привет", {
+  font: "liberation sans",
+  weight: "normal",
+  size: 3
 } );
-shapes.computeBoundingBox();
 geom = new THREE.ShapeGeometry( shapes );
 mat = new THREE.MeshBasicMaterial({color: 0xaa00ff});
 textMesh = new THREE.Mesh( geom, mat );
