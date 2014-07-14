@@ -3,6 +3,7 @@ var ways = {};
 var buildings = {};
 var srlzr = new XMLSerializer();
 var parsr = new DOMParser();
+var xpe = new XPathEvaluator();
 var captions = [];
 
 function handleFiles(files) {
@@ -15,15 +16,10 @@ function handleFiles(files) {
 }
 
 function evaluateXPath(aNode, aExpr) {
-  var xpe = new XPathEvaluator();
   var nsResolver = xpe.createNSResolver(aNode.ownerDocument == null ?
-    aNode.documentElement : aNode.ownerDocument.documentElement);
+                                        aNode.documentElement : aNode.ownerDocument.documentElement);
   var result = xpe.evaluate(aExpr, aNode, nsResolver, 0, null);
-  var found = [];
-  var res;
-  while (res = result.iterateNext())
-    found.push(res);
-  return found;
+  return result;
 }
 
 function normalize2d(v)
@@ -88,7 +84,9 @@ function nearest(points, point){
         }
     }
     //return [j, points[j]];
-    if(j===0 || j===points.length-1) return [j, points[j]];
+    if(j===0 || j===points.length-1) {
+        return [j, points[j]];
+    }
     var near = Math.min(lastmin, nextmin);
     var sign = lastmin > nextmin ? 1: -1;
     var c = min/(near+min);
@@ -114,7 +112,7 @@ function linedist(a, b, c){
 
 function parse_nodes(map){
     var xml = parsr.parseFromString(map, 'text/xml');
-    var bounds = evaluateXPath(xml, "/osm/bounds")[0];
+    var bounds = evaluateXPath(xml, "/osm/bounds").iterateNext();
     var minlat = parseFloat(bounds.getAttribute("minlat"));
     var minlon = parseFloat(bounds.getAttribute("minlon"));
     var maxlat = parseFloat(bounds.getAttribute("maxlat"));
@@ -124,39 +122,53 @@ function parse_nodes(map){
     var coeff = Math.min(clon, clat);
     var results = evaluateXPath(xml, "/osm/node");
     var id, lon, lat, nd, ver, lvl, _lvl, _name, name;
-    for(var i=0; i<results.length; i++){
-        nd = results[i];
+    while(nd = results.iterateNext()){
         id = parseInt(nd.getAttribute("id"));
         lon = (parseFloat(nd.getAttribute("lon")) - minlon) * coeff - window.innerWidth/2;
         lat = (parseFloat(nd.getAttribute("lat")) - minlat) * coeff - window.innerHeight/2;
         nodes[id] = new Float32Array([lat/32, lon/32]);
+        delete nd;
     }
-    var nds, way, results = evaluateXPath(xml, "/osm/way[not(tag/@k='building')]");
-    for(i=0; i<results.length; i++){
-        way = results[i];
+    delete results;
+    console.log("Nodes done");
+    var nds, child, way, results = evaluateXPath(xml, "/osm/way[not(tag/@k='building')]");
+    while(way = results.iterateNext()){
         id = parseInt(way.getAttribute("id"));
-        _name = evaluateXPath(xml, "/osm/way[@id=\'"+id+"\']/tag[@k='name']/@v");
-        _name = _name[0] && _name[0].value ? _name[0].value : "noname";
-        console.log(_name);
-        nds = evaluateXPath(xml, "/osm/way[@id=\'"+id+"\']/nd");
-        ver = evaluateXPath(xml, "/osm/way[@id=\'"+id+"\']/@version")[0].value;
-        console.log(ver);
+        ver = parseInt(way.getAttribute("version"));
+        _name = 'noname';
         ways[id] = {};
-        ways[id].nodes = new Uint32Array(nds.map(function(res){return parseInt(res.getAttribute("ref"));}));
+        nds = [];
+        for(var i=0; i<way.children.length; i++){
+            child = way.children[i];
+            if(child.tagName==='nd') nds.push(parseInt(child.getAttribute("ref")));
+            else if(child.tagName==='tag')
+                    if(child.getAttribute("k")==='name') _name = child.getAttribute("v");
+        }
+        ways[id].nodes = new Uint32Array(nds);
         ways[id].ver = parseInt(ver);
         ways[id].name = _name;
+        delete way;
     }
+    delete results;
+    console.log("Ways done");
     results = evaluateXPath(xml, "/osm/way[tag/@k='building']");
-    for(i=0; i<results.length; i++){
-        way = results[i];
+    while(way = results.iterateNext()){
         id = parseInt(way.getAttribute("id"));
-        _lvl = evaluateXPath(xml, "/osm/way[@id=\'"+id+"\']/tag[@k='building:levels']/@v");
-        nds = evaluateXPath(xml, "/osm/way[@id=\'"+id+"\']/nd");
-        lvl = _lvl[0] && _lvl[0].value ? parseInt(_lvl[0].value) : 1;
+        lvl = 1;
         buildings[id] = {};
-        buildings[id].lvl = lvl ? lvl : 1;
-        buildings[id].nodes = new Uint32Array(nds.map(function(res){return parseInt(res.getAttribute("ref"));}));
+        nds = [];
+        for(var i=0; i<way.children.length; i++){
+            child = way.children[i];
+            if(child.tagName==='nd') nds.push(parseInt(child.getAttribute("ref")));
+            else if(child.tagName==='tag')
+                    if(child.getAttribute("k")==='building:levels') lvl = parseInt(child.getAttribute("v"));
+        }
+        buildings[id].lvl = lvl;
+        buildings[id].nodes = new Uint32Array(nds);
+        delete way;
     }
+    delete results;
+    console.log("Buildings done");
     //console.log(ways);
     //console.log(nds);
     draw_scene();
