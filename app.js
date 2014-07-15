@@ -5,6 +5,23 @@ var srlzr = new XMLSerializer();
 var parsr = new DOMParser();
 var xpe = new XPathEvaluator();
 var captions = [];
+var bitmap = document.createElement('canvas');
+document.body.appendChild(bitmap);
+bitmap.height = 32;
+bitmap.width = bitmap.height*6;
+var ctx = bitmap.getContext('2d');
+ctx.textBaseline = 'middle';
+ctx.textAlign = 'center';
+ctx.scale(1,1);
+ctx.fillStyle = '#ffaa00';
+ctx.fillText("Hello", bitmap.width/2, 16);
+ctx.strokeStyle = 'black';
+ctx.strokeText("Hello", bitmap.width/2, 16);
+
+// canvas contents will be used for a texture
+// var texture = new THREE.Texture(bitmap) 
+// texture.needsUpdate = true;
+if(!Math.sign) Math.sign = function(x){return x/Math.abs(x);};
 
 function handleFiles(files) {
     var file = files[0]; /* now you can work with the file list */
@@ -132,6 +149,7 @@ function parse_nodes(map){
     var results = evaluateXPath(xml, "/osm/node");
     var id, lon, lat, nd, ver, lvl, _lvl, _name, name;
     while(nd = results.iterateNext()){
+        //if(parseInt(nd.getAttribute("version"))>3) continue;
         id = parseInt(nd.getAttribute("id"));
         lon = (parseFloat(nd.getAttribute("lon")) - minlon) * coeff - window.innerWidth/2;
         lat = (parseFloat(nd.getAttribute("lat")) - minlat) * coeff - window.innerHeight/2;
@@ -142,6 +160,7 @@ function parse_nodes(map){
     console.log("Nodes done");
     var nds, child, way, results = evaluateXPath(xml, "/osm/way[not(tag/@k='building')]");
     while(way = results.iterateNext()){
+    //    if(parseInt(way.getAttribute("version"))>3) continue;
         id = parseInt(way.getAttribute("id"));
         ver = parseInt(way.getAttribute("version"));
         _name = 'noname';
@@ -162,6 +181,7 @@ function parse_nodes(map){
     console.log("Ways done");
     results = evaluateXPath(xml, "/osm/way[tag/@k='building']");
     while(way = results.iterateNext()){
+    //    if(parseInt(way.getAttribute("version"))>3) continue;
         id = parseInt(way.getAttribute("id"));
         lvl = 1;
         buildings[id] = {};
@@ -235,6 +255,8 @@ function CExtr(points, height, color, lvl){
             bevelThickness: 0, bevelSize: 0.0, bevelEnabled: false,
             material: 1, extrudeMaterial: 0});
     var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshBasicMaterial( { color: color } ) ) ;
+    rectMesh.matrixAutoUpdate = false;
+    rectMesh.updateMatrix();
     return rectMesh;
 }
 
@@ -249,12 +271,47 @@ function CText(text, color){
     return new THREE.Mesh( geom, mat );
 }
 
+function CTexturedText(text, color){
+    bitmap.width = bitmap.height*text.length;
+    ctx.font = "48px 'Helvetica'";
+    var h = bitmap.height/100;
+    var w = bitmap.width/100;
+    ctx.rect(0, 0, bitmap.width, bitmap.height);
+    ctx.fillStyle="white";
+    ctx.fill();
+    ctx.fillStyle = '#330055';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    ctx.scale(1,1);
+    ctx.fillText(text, bitmap.width/2, bitmap.height/2);
+    ctx.strokeStyle = '#ffffff';
+    ctx.strokeText(text, bitmap.width/2, bitmap.height/2);
+    var texture = new THREE.Texture(bitmap);
+    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.needsUpdate = true;
+    var points = [[0,0],
+                  [0,h],
+                  [w,h],
+                  [w,0],
+                  [0,0]];
+    var rectShape = new THREE.Shape();
+    rectShape.moveTo(points[0][0], points[0][1]);
+    for(var i=1; i<points.length; i++){
+        rectShape.lineTo(points[i][0], points[i][1]);
+    }
+    var rectGeom = new THREE.ShapeGeometry( rectShape );
+    var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshPhongMaterial( { color: 0xfffeed, map: texture } ) ) ;
+    return rectMesh;
+}
+
 function draw_scene(){
     
-    
+    var meshgroup = new THREE.Object3D();
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
     var renderer = new THREE.WebGLRenderer();
+    renderer.sortObjects = false;
+    renderer.setClearColor( 0xaaaaaa );
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
     var rectWidth = 8;
@@ -284,13 +341,13 @@ function draw_scene(){
             if(nds[0]===nds[nds.length-1]){
                 //Shape
                 var shape = CMesh(CShape(waypoints), Math.round(Math.random()*0xffffff));
-                scene.add( shape );
                 shape.position.z+=0.001*ways[way].ver;
+                meshgroup.add( shape );
             } else {
                 //Path
                 ways[way].points = waypoints;
                 wayshapes.push(CPath(waypoints));
-                ways[way].namemesh = CText(ways[way].name, 0xffffff);
+                ways[way].namemesh = CTexturedText(ways[way].name, 0xffffff);
                 scene.add( ways[way].namemesh );
                 ways[way].namemesh.position.z+=0.001*(ways[way].ver+1);
             }
@@ -299,7 +356,7 @@ function draw_scene(){
         }
     }
     var shape = CMesh(wayshapes, Math.round(Math.random()*0xffffff));
-    scene.add( shape );
+    meshgroup.add( shape );
     for(way in buildings){
         waypoints = [];
         nds = buildings[way].nodes;
@@ -308,16 +365,23 @@ function draw_scene(){
             waypoints.push(nodes[ref]);
         }
         try {
-            scene.add( CExtr(waypoints, 0.001, Math.round(Math.random()*0xffffff), buildings[way].lvl) );
+            meshgroup.add( CExtr(waypoints, 0.001, Math.round(Math.random()*0xffffff), buildings[way].lvl) );
         } catch (e){
             console.warn(e);
         }
         //if(j>9) break;
         //j+=1;
     }
-    controls = new THREE.OrbitControls( camera, renderer.domElement );
+    scene.add( meshgroup );
+    controls = new THREE.TrackballControls( camera, renderer.domElement );
+    controls.minDistance = 2;
+    controls.maxDistance = 500;
     camera.position.z = 15;
     camera.lookAt(scene.position);
+    scene.add( new THREE.AmbientLight( 0x222222 ) );
+    light = new THREE.PointLight( 0xffffaa );
+    light.position = camera.position;
+    scene.add( light );
     var x = 0;
     function render() {
         requestAnimationFrame(render);
