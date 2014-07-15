@@ -101,13 +101,22 @@ function simpleperp(v, desired_length) {
     return [-scale_factor * v[1], scale_factor * v[0]];
 }
 
-function linedist(a, b, c){
-    var n = [];
-    n[1] = -(b[0] - a[0]);
-    n[0] = (b[1] - a[1]);
-    normalize2d(n); //нормуль
-    var ac = diff2d(c, a);
-    return Math.sqrt(n[0]*ac[0]+n[1]*ac[1]); // где * - скалярное произведение
+function linedist(p, q, x){
+//Find equation Ax+By+C=0 from points p and q
+    var a = p[1] - q[1];
+    var b = q[0] - p[0];
+    var c = -a*p[0] - b*p[1];
+    //Find nearest point
+    var res = [];
+    res[0] = (b*(b*x[0]-a*x[1])-a*c)/(a*a+b*b);
+    res[1] = (a*(-b*x[0]+a*x[1])-b*c)/(a*a+b*b);
+    var d1 = diff2d(p, q);
+    var d1x = diff2d(res, q);
+    if(Math.sign(d1[0])!==Math.sign(d1x[0]) || Math.sign(d1[1])!==Math.sign(d1x[1])) return q;
+    var d2 = [-d1[0], -d1[1]];
+    var d2x = diff2d(res, p);
+    if(Math.sign(d2[0])!==Math.sign(d2x[0]) || Math.sign(d2[1])!==Math.sign(d2x[1])) return p;
+    return res;
 }
 
 function parse_nodes(map){
@@ -175,7 +184,7 @@ function parse_nodes(map){
 }
 
 
-function CPath(points, color){
+function CPath(points){
     //console.log(points);
     var v, thin = 0.2;
     var rectShape = new THREE.Shape();
@@ -194,12 +203,9 @@ function CPath(points, color){
         rectShape.lineTo(points[i][0]+moves[i][0], points[i][1]+moves[i][1]);
     }
     rectShape.lineTo(points[0][0]-moves[0][0], points[0][1]-moves[0][1]);
-    //console.log(rectShape.toShapes(true, true));
-    var rectGeom = new THREE.ShapeGeometry( rectShape );
-    var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshBasicMaterial( { color: color } ) ) ;
-    return rectMesh;
+    return rectShape;
 }
-function CShape(points, color){
+function CShape(points){
     //console.log(points);
     var rectShape = new THREE.Shape();
     rectShape.moveTo(points[0][0], points[0][1]);
@@ -207,8 +213,11 @@ function CShape(points, color){
         rectShape.lineTo(points[i][0], points[i][1]);
         //console.log("Line to "+points[i]);
     }
+    return rectShape;
     //console.log("Line to "+points[0]);
-    var rectGeom = new THREE.ShapeGeometry( rectShape );
+}
+function CMesh(shapes, color){
+    var rectGeom = new THREE.ShapeGeometry( shapes );
     var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshBasicMaterial( { color: color } ) ) ;
     return rectMesh;
 }
@@ -263,6 +272,7 @@ function draw_scene(){
    // scene.add( textMesh );
     var i, nds, way, waypoints, ref, j=0;
     console.log(ways);
+    var wayshapes = [];
     for(way in ways){
         waypoints = [];
         nds = ways[way].nodes;
@@ -273,21 +283,23 @@ function draw_scene(){
         try {
             if(nds[0]===nds[nds.length-1]){
                 //Shape
-                var shape = CShape(waypoints, Math.round(Math.random()*0xffffff));
+                var shape = CMesh(CShape(waypoints), Math.round(Math.random()*0xffffff));
+                scene.add( shape );
+                shape.position.z+=0.001*ways[way].ver;
             } else {
                 //Path
                 ways[way].points = waypoints;
-                var shape = CPath(waypoints, Math.round(Math.random()*0xffffff));
+                wayshapes.push(CPath(waypoints));
                 ways[way].namemesh = CText(ways[way].name, 0xffffff);
                 scene.add( ways[way].namemesh );
                 ways[way].namemesh.position.z+=0.001*(ways[way].ver+1);
             }
-            scene.add( shape );
-            shape.position.z+=0.001*ways[way].ver;
         } catch (e){
             console.warn(e);
         }
     }
+    var shape = CMesh(wayshapes, Math.round(Math.random()*0xffffff));
+    scene.add( shape );
     for(way in buildings){
         waypoints = [];
         nds = buildings[way].nodes;
@@ -323,9 +335,10 @@ function draw_scene(){
                 var l = k===0 ? 1 : k - 1;
                 var m = ways[way].points[k > l ? k : l];
                 var n = ways[way].points[k > l ? l : k];
+                var pos = linedist(m, n, [camera.position.x, camera.position.y]);
                 var angle = (m[1]-n[1])/(m[0]-n[0]);
-                ways[way].namemesh.position.x = ways[way].points[k][0];
-                ways[way].namemesh.position.y = ways[way].points[k][1];
+                ways[way].namemesh.position.x = pos[0];
+                ways[way].namemesh.position.y = pos[1];
                 ways[way].namemesh.rotation.z = Math.atan(angle);
             }
         }
