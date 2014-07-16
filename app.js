@@ -229,16 +229,8 @@ function CMesh(shapes, color){
     var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshBasicMaterial( { color: color } ) ) ;
     return rectMesh;
 }
-function CExtr(points, height, color, lvl){
-    //console.log("Extrude from");
-    //console.log(points);
-    var rectShape = new THREE.Shape();
-    rectShape.moveTo(points[0][0], points[0][1]);
-    for(var i=1; i<points.length; i++){
-        rectShape.lineTo(points[i][0], points[i][1]);
-        //console.log("Line to "+points[i]);
-    }
-    var rectGeom = new THREE.ExtrudeGeometry( rectShape, {
+function CExtr(shapes, height, color, lvl){
+    var rectGeom = new THREE.ExtrudeGeometry( shapes, {
             steps: 1, size: 0.0001, amount: lvl, curveSegments: 1,
             bevelThickness: 0, bevelSize: 0.0, bevelEnabled: false,
             material: 1, extrudeMaterial: 0});
@@ -365,6 +357,7 @@ function draw_scene(){
     }
     var shape = CMesh(wayshapes, Math.round(Math.random()*0xffffff));
     meshgroup.add( shape );
+    var lvls = {};
     for(way in buildings){
         waypoints = [];
         nds = buildings[way].nodes;
@@ -372,14 +365,16 @@ function draw_scene(){
             ref = nds[i];
             waypoints.push(nodes[ref]);
         }
+        if(!lvls[buildings[way].lvl]) lvls[buildings[way].lvl] = [];
         try {
-            meshgroup.add( CExtr(waypoints, 0.001, Math.round(Math.random()*0xffffff), buildings[way].lvl) );
+            lvls[buildings[way].lvl].push(CShape(waypoints));
         } catch (e){
             console.warn(e);
         }
         //if(j>9) break;
         //j+=1;
     }
+    for(lvl in lvls) meshgroup.add( CExtr(lvls[lvl], 0.001, Math.round(Math.random()*0xffffff), lvl) );
     scene.add( meshgroup );
     controls = new THREE.TrackballControls( camera, renderer.domElement );
     controls.minDistance = 2;
