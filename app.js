@@ -5,18 +5,7 @@ var srlzr = new XMLSerializer();
 var parsr = new DOMParser();
 var xpe = new XPathEvaluator();
 var captions = [];
-var bitmap = document.createElement('canvas');
-document.body.appendChild(bitmap);
-bitmap.height = 32;
-bitmap.width = bitmap.height*6;
-var ctx = bitmap.getContext('2d');
-ctx.textBaseline = 'middle';
-ctx.textAlign = 'center';
-ctx.scale(1,1);
-ctx.fillStyle = '#ffaa00';
-ctx.fillText("Hello", bitmap.width/2, 16);
-ctx.strokeStyle = 'black';
-ctx.strokeText("Hello", bitmap.width/2, 16);
+
 
 // canvas contents will be used for a texture
 // var texture = new THREE.Texture(bitmap) 
@@ -163,7 +152,7 @@ function parse_nodes(map){
     //    if(parseInt(way.getAttribute("version"))>3) continue;
         id = parseInt(way.getAttribute("id"));
         ver = parseInt(way.getAttribute("version"));
-        _name = 'noname';
+        _name = null;
         ways[id] = {};
         nds = [];
         for(var i=0; i<way.children.length; i++){
@@ -174,7 +163,7 @@ function parse_nodes(map){
         }
         ways[id].nodes = new Uint32Array(nds);
         ways[id].ver = parseInt(ver);
-        ways[id].name = _name;
+        if(_name) ways[id].name = _name;
         delete way;
     }
     delete results;
@@ -205,6 +194,7 @@ function parse_nodes(map){
 
 
 function CPath(points){
+    //console.log("Path from");
     //console.log(points);
     var v, thin = 0.2;
     var rectShape = new THREE.Shape();
@@ -214,7 +204,6 @@ function CPath(points){
         moves.push(v);
     }
     moves[0] = moves[1];
-    //console.log(moves);
     rectShape.moveTo(points[0][0]-moves[0][0], points[0][1]-moves[0][1]);
     for(var i=1; i<points.length; i++){
         rectShape.lineTo(points[i][0]-moves[i][0], points[i][1]-moves[i][1]);
@@ -226,15 +215,14 @@ function CPath(points){
     return rectShape;
 }
 function CShape(points){
+    //console.log("Shape from");
     //console.log(points);
     var rectShape = new THREE.Shape();
     rectShape.moveTo(points[0][0], points[0][1]);
     for(var i=1; i<points.length; i++){
         rectShape.lineTo(points[i][0], points[i][1]);
-        //console.log("Line to "+points[i]);
     }
     return rectShape;
-    //console.log("Line to "+points[0]);
 }
 function CMesh(shapes, color){
     var rectGeom = new THREE.ShapeGeometry( shapes );
@@ -242,6 +230,7 @@ function CMesh(shapes, color){
     return rectMesh;
 }
 function CExtr(points, height, color, lvl){
+    //console.log("Extrude from");
     //console.log(points);
     var rectShape = new THREE.Shape();
     rectShape.moveTo(points[0][0], points[0][1]);
@@ -249,9 +238,8 @@ function CExtr(points, height, color, lvl){
         rectShape.lineTo(points[i][0], points[i][1]);
         //console.log("Line to "+points[i]);
     }
-    //console.log("Line to "+points[0]);
     var rectGeom = new THREE.ExtrudeGeometry( rectShape, {
-            steps: lvl, size: 0.001, amount: lvl, curveSegments: 3,
+            steps: 1, size: 0.0001, amount: lvl, curveSegments: 1,
             bevelThickness: 0, bevelSize: 0.0, bevelEnabled: false,
             material: 1, extrudeMaterial: 0});
     var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshBasicMaterial( { color: color } ) ) ;
@@ -272,12 +260,18 @@ function CText(text, color){
 }
 
 function CTexturedText(text, color){
+    var bitmap = document.createElement('canvas');
+    var ctx = bitmap.getContext('2d');
+    bitmap.height = 32;
     bitmap.width = bitmap.height*text.length;
-    ctx.font = "48px 'Helvetica'";
+    /*ctx.width = ctx.width;
+    ctx.translate(0, bitmap.height);
+    ctx.scale(1, -1);*/
+    ctx.font = "40px 'Helvetica'";
     var h = bitmap.height/100;
     var w = bitmap.width/100;
     ctx.rect(0, 0, bitmap.width, bitmap.height);
-    ctx.fillStyle="white";
+    ctx.fillStyle = "rgba(255, 120, 240, 0.0)";;
     ctx.fill();
     ctx.fillStyle = '#330055';
     ctx.textBaseline = 'middle';
@@ -289,7 +283,7 @@ function CTexturedText(text, color){
     var texture = new THREE.Texture(bitmap);
     texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.needsUpdate = true;
-    var points = [[0,0],
+    /*var points = [[0,0],
                   [0,h],
                   [w,h],
                   [w,0],
@@ -300,7 +294,19 @@ function CTexturedText(text, color){
         rectShape.lineTo(points[i][0], points[i][1]);
     }
     var rectGeom = new THREE.ShapeGeometry( rectShape );
-    var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshPhongMaterial( { color: 0xfffeed, map: texture } ) ) ;
+    var vcs = [new THREE.Vector2( 0, 1 ),
+               new THREE.Vector2( 1, 1 ),
+               new THREE.Vector2( 1, 0 ),
+               new THREE.Vector2( 0, 0 )];
+    rectGeom.faceVertexUvs[ 0 ][0] =[vcs[0],  
+                                     vcs[1],  
+                                     vcs[2]]; 
+    rectGeom.faceVertexUvs[ 0 ][1] =[vcs[2],  
+                                     vcs[3],  
+                                     vcs[0]]; */
+    var rectGeom = new THREE.PlaneGeometry(w, h);
+    var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshPhongMaterial( { color: 0xfffeed, map: texture, transparent: true } ) ) ;
+    delete ctx; delete bitmap;
     return rectMesh;
 }
 
@@ -328,7 +334,7 @@ function draw_scene(){
    // scene.add( mshape );
    // scene.add( textMesh );
     var i, nds, way, waypoints, ref, j=0;
-    console.log(ways);
+    //console.log(ways);
     var wayshapes = [];
     for(way in ways){
         waypoints = [];
@@ -347,9 +353,11 @@ function draw_scene(){
                 //Path
                 ways[way].points = waypoints;
                 wayshapes.push(CPath(waypoints));
-                ways[way].namemesh = CTexturedText(ways[way].name, 0xffffff);
-                scene.add( ways[way].namemesh );
-                ways[way].namemesh.position.z+=0.001*(ways[way].ver+1);
+                if(ways[way].name){
+                    ways[way].namemesh = CTexturedText(ways[way].name, 0xffffff);
+                    scene.add( ways[way].namemesh );
+                    ways[way].namemesh.position.z+=0.001*(ways[way].ver+1);
+                }
             }
         } catch (e){
             console.warn(e);
