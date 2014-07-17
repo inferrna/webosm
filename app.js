@@ -132,16 +132,17 @@ function parse_nodes(map){
     var minlon = parseFloat(bounds.getAttribute("minlon"));
     var maxlat = parseFloat(bounds.getAttribute("maxlat"));
     var maxlon = parseFloat(bounds.getAttribute("maxlon"));
-    var clon = window.innerWidth/(maxlon-minlon);
-    var clat = window.innerHeight/(maxlat-minlat);
-    var coeff = Math.min(clon, clat);
+    var clon = maxlon-minlon;
+    var clat = maxlat-minlat;
+    var coeff = 500000;
+    console.log("coeff == "+coeff);
     var results = evaluateXPath(xml, "/osm/node");
     var id, lon, lat, nd, ver, lvl, _lvl, _name, name;
     while(nd = results.iterateNext()){
         //if(parseInt(nd.getAttribute("version"))>3) continue;
         id = parseInt(nd.getAttribute("id"));
-        lon = (parseFloat(nd.getAttribute("lon")) - minlon) * coeff - window.innerWidth/2;
-        lat = (parseFloat(nd.getAttribute("lat")) - minlat) * coeff - window.innerHeight/2;
+        lon = (parseFloat(nd.getAttribute("lon")) - minlon - clon/2) * coeff;
+        lat = (parseFloat(nd.getAttribute("lat")) - minlat - clat/2) * coeff;
         nodes[id] = new Float32Array([lat/32, lon/32]);
         delete nd;
     }
@@ -230,11 +231,14 @@ function CMesh(shapes, color){
     return rectMesh;
 }
 function CExtr(shapes, height, color, lvl){
+    console.log("Extrude to "+lvl+" lvl");
+    var vcs = [new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, parseFloat(lvl) )];
+    var curve = new THREE.SplineCurve3(vcs);
     var rectGeom = new THREE.ExtrudeGeometry( shapes, {
-            steps: 1, size: 0.0001, amount: lvl, curveSegments: 1,
+            steps: 1, size: 0.00001, amount: lvl, curveSegments: 1,
             bevelThickness: 0, bevelSize: 0.0, bevelEnabled: false,
             material: 1, extrudeMaterial: 0});
-    var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshBasicMaterial( { color: color } ) ) ;
+    var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshPhongMaterial( { color: color } ) ) ;
     rectMesh.matrixAutoUpdate = false;
     rectMesh.updateMatrix();
     return rectMesh;
@@ -376,10 +380,19 @@ function draw_scene(){
     }
     for(lvl in lvls) meshgroup.add( CExtr(lvls[lvl], 0.001, Math.round(Math.random()*0xffffff), lvl) );
     scene.add( meshgroup );
-    controls = new THREE.TrackballControls( camera, renderer.domElement );
-    controls.minDistance = 2;
-    controls.maxDistance = 500;
-    camera.position.z = 15;
+    camera.position.z = 50;
+    controls = new THREE.OrbitControls( camera, renderer.domElement );
+    controls.minDistance = 0;
+    controls.maxDistance = 5000;
+    controls.rotateSpeed = 1.0;
+    controls.zoomSpeed = 16;
+    controls.panSpeed = 16;
+
+    controls.noZoom = false;
+    controls.noPan = false;
+
+    controls.staticMoving = true;
+    controls.dynamicDampingFactor = 0.3;
     camera.lookAt(scene.position);
     scene.add( new THREE.AmbientLight( 0x222222 ) );
     light = new THREE.PointLight( 0xffffaa );
@@ -403,10 +416,11 @@ function draw_scene(){
                 var m = ways[way].points[k > l ? k : l];
                 var n = ways[way].points[k > l ? l : k];
                 var pos = linedist(m, n, [camera.position.x, camera.position.y]);
-                var angle = (m[1]-n[1])/(m[0]-n[0]);
+                var angle = Math.atan((m[1]-n[1])/(m[0]-n[0]));
+                angle = Math.round((camera.rotation.z-angle)/Math.PI) == 0 ? angle : angle + Math.PI;
                 ways[way].namemesh.position.x = pos[0];
                 ways[way].namemesh.position.y = pos[1];
-                ways[way].namemesh.rotation.z = Math.atan(angle);
+                ways[way].namemesh.rotation.z = angle;
             }
         }
         renderer.render(scene, camera); 
