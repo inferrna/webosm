@@ -150,7 +150,7 @@ function parse_nodes(map){
     console.log("Nodes done");
     var nds, child, way, results = evaluateXPath(xml, "/osm/way[not(tag/@k='building')]");
     while(way = results.iterateNext()){
-    //    if(parseInt(way.getAttribute("version"))>3) continue;
+        if(parseInt(way.getAttribute("version"))>3) continue;
         id = parseInt(way.getAttribute("id"));
         ver = parseInt(way.getAttribute("version"));
         _name = null;
@@ -171,7 +171,7 @@ function parse_nodes(map){
     console.log("Ways done");
     results = evaluateXPath(xml, "/osm/way[tag/@k='building']");
     while(way = results.iterateNext()){
-    //    if(parseInt(way.getAttribute("version"))>3) continue;
+        if(parseInt(way.getAttribute("version"))>3) continue;
         id = parseInt(way.getAttribute("id"));
         lvl = 1;
         buildings[id] = {};
