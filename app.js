@@ -5,7 +5,7 @@ var srlzr = new XMLSerializer();
 var parsr = new DOMParser();
 var xpe = new XPathEvaluator();
 var captions = [];
-
+var waynames = {};
 
 // canvas contents will be used for a texture
 // var texture = new THREE.Texture(bitmap) 
@@ -139,7 +139,6 @@ function parse_nodes(map){
     var results = evaluateXPath(xml, "/osm/node");
     var id, lon, lat, nd, ver, lvl, _lvl, _name, name;
     while(nd = results.iterateNext()){
-        //if(parseInt(nd.getAttribute("version"))>3) continue;
         id = parseInt(nd.getAttribute("id"));
         lon = (parseFloat(nd.getAttribute("lon")) - minlon - clon/2) * coeff;
         lat = (parseFloat(nd.getAttribute("lat")) - minlat - clat/2) * coeff;
@@ -150,28 +149,39 @@ function parse_nodes(map){
     console.log("Nodes done");
     var nds, child, way, results = evaluateXPath(xml, "/osm/way[not(tag/@k='building')]");
     while(way = results.iterateNext()){
-        if(parseInt(way.getAttribute("version"))>3) continue;
+        //if(parseInt(way.getAttribute("version"))>3) continue;
         id = parseInt(way.getAttribute("id"));
         ver = parseInt(way.getAttribute("version"));
-        _name = null;
-        ways[id] = {};
+        var tmpway = {};
         nds = [];
         for(var i=0; i<way.children.length; i++){
             child = way.children[i];
             if(child.tagName==='nd') nds.push(parseInt(child.getAttribute("ref")));
-            else if(child.tagName==='tag')
-                    if(child.getAttribute("k")==='name') _name = child.getAttribute("v");
+            else if(child.tagName==='tag'){
+                    var k = child.getAttribute("k");
+                    if(k==='name'){
+                        tmpway.name = child.getAttribute("v");
+                        if(waynames[tmpway.name]){
+                            if(ways[waynames[tmpway.name]].ver > ver) continue;
+                            else delete ways[waynames[tmpway.name]];
+                        }
+                    }
+                    else if(k==='landuse') tmpway.landuse = child.getAttribute("v");
+                    else if(k==='barrier') tmpway.barrier = child.getAttribute("v");
+                    else if(k==='leisure') tmpway.leisure = child.getAttribute("v");
+                }
         }
-        ways[id].nodes = new Uint32Array(nds);
-        ways[id].ver = parseInt(ver);
-        if(_name) ways[id].name = _name;
+        tmpway.nodes = new Uint32Array(nds);
+        tmpway.ver = ver;
+        //waynames[tmpway.name] = id;
+        ways[id] = tmpway;
         delete way;
     }
     delete results;
     console.log("Ways done");
     results = evaluateXPath(xml, "/osm/way[tag/@k='building']");
     while(way = results.iterateNext()){
-        if(parseInt(way.getAttribute("version"))>3) continue;
+        //if(parseInt(way.getAttribute("version"))>3) continue;
         id = parseInt(way.getAttribute("id"));
         lvl = 1;
         buildings[id] = {};
