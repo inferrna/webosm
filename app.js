@@ -6,7 +6,7 @@ var parsr = new DOMParser();
 var xpe = new XPathEvaluator();
 var captions = [];
 var waynames = {};
-
+var anisotropy;
 // canvas contents will be used for a texture
 // var texture = new THREE.Texture(bitmap) 
 // texture.needsUpdate = true;
@@ -289,6 +289,7 @@ function CTexturedText(text, color){
     var texture = new THREE.Texture(bitmap);
     texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.needsUpdate = true;
+    texture.anisotropy = anisotropy;
     /*var points = [[0,0],
                   [0,h],
                   [w,h],
@@ -325,6 +326,7 @@ function draw_scene(){
     renderer.sortObjects = false;
     renderer.setClearColor( 0xaaaaaa );
     renderer.setSize( window.innerWidth, window.innerHeight );
+    anisotropy = (renderer.getMaxAnisotropy() - 2) || 2;
     document.body.appendChild( renderer.domElement );
     var rectWidth = 8;
     var rectLength = -10;
@@ -427,7 +429,9 @@ function draw_scene(){
                 var n = ways[way].points[k > l ? l : k];
                 var pos = linedist(m, n, [camera.position.x, camera.position.y]);
                 var angle = Math.atan((m[1]-n[1])/(m[0]-n[0]));
+                var scale = Math.min(Math.round(Math.abs(camera.position.z/8)), 8) || 1;
                 angle = Math.round((camera.rotation.z-angle)/Math.PI) == 0 ? angle : angle + Math.PI;
+                ways[way].namemesh.scale.set(scale, scale, 1);
                 ways[way].namemesh.position.x = pos[0];
                 ways[way].namemesh.position.y = pos[1];
                 ways[way].namemesh.rotation.z = angle;
