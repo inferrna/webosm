@@ -4,18 +4,21 @@
  <meta charset="utf-8">
 </head> 
 <body> 
-<!--script src="typeface-0.15.js"></script>
-<script src="liberation_sans_regular.typeface.js"></script>
-<script src="helvetiker_font/helvetiker_bold_italic.typeface.js"</script>
-<script src="helvetiker_font/helvetiker_bold.typeface.js"</script>
-<script src="helvetiker_font/helvetiker_italic.typeface.js"</script>
-<script src="helvetiker_font/helvetiker_regular.typeface.js"</script-->
-<script src="hammer.min.js"></script>
+<script>
+    var modules = {};
+    var processed = {};
+    processed.ways = [];
+    processed.nodes = [];
+    processed.relations = [];
+</script>
+<script src="funcs.js"></script>
 <script src="three.min.js"></script>
 <script src="OrbitControls.js"></script>
 <script src="TrackballControls.js"></script>
 <script src="helvetiker_bold.typeface.js"></script>
 <script src="liberation_sans_regular.typeface.js"></script>
+<script src="threefuncs.js"></script>
+<script src="ways.js"></script>
 <script src="app.js"></script>
 </body> 
 <input type="file" id="input" onchange="handleFiles(this.files)">
