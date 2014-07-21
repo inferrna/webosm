@@ -3,14 +3,15 @@ function Waynames(){
     this.p = modules.ways;
     this.parse_itm = function(itm, node){
         for(var i=0; i<node.children.length; i++){
-            child = node.children[i];
+            var child = node.children[i];
+            var id = node.getAttribute("id");
             if(child.tagName==='tag'){
                 var k = child.getAttribute("k");
                 if(k==='name') {
-                    this.names[itm.id] = {};
-                    this.names[itm.id].nm = child.getAttribute("v");
-                    this.names[itm.id].ver = itm.ver;
-                    this.names[itm.id].points = itm.points;
+                    this.names[id] = {};
+                    this.names[id].nm = child.getAttribute("v");
+                    this.names[id].ver = itm.ver;
+                    this.names[id].points = itm.points;
                     return 1;
                 }
             }

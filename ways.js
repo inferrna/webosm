@@ -45,7 +45,7 @@ function Ways(){
         this.modules.waynames.get_mesh(meshgroup);
         for(way in this.items){
             try {
-                if(nds[0]===nds[nds.length-1]){
+                if(this.items[way].nodes[0]===this.items[way].nodes[nds.length-1]){
                     //Shape
                     var shape = CMesh(CShape(this.items[way].points), Math.round(Math.random()*0xffffff));
                     shape.position.z+=0.001*this.items[way].ver;
