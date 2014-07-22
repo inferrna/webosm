@@ -3,8 +3,8 @@ function Waynames(){
     this.p = modules.ways;
     this.parse_itm = function(itm, node){
         for(var i=0; i<node.children.length; i++){
-            var child = node.children[i];
             var id = node.getAttribute("id");
+            var child = node.children[i];
             if(child.tagName==='tag'){
                 var k = child.getAttribute("k");
                 if(k==='name') {

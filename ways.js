@@ -23,6 +23,7 @@ function Ways(){
             tmpway.nodes = new Uint32Array(nds);
             tmpway.points = waypoints;
             this.modules.waynames.parse_itm(tmpway, way);
+            this.modules.wayshapes.parse_itm(tmpway, way);
             /*for(var i=0; i<way.children.length; i++){
                 child = way.children[i];
                 if(child.tagName==='tag'){
@@ -33,8 +34,10 @@ function Ways(){
                     else if(k==='leisure') tmpway.leisure = child.getAttribute("v");
                 }
             }*/
-            if(!(id in processed.ways)) this.items[id] = tmpway;
-            processed.ways.push(id);
+            if(processed.ways.indexOf(id)===-1) {
+                this.items[id] = tmpway;
+                processed.ways.push(id);
+            }
             delete way;
         }
         delete results;
@@ -43,17 +46,12 @@ function Ways(){
     this.get_mesh = function(meshgroup){
         var wayshapes = [];
         this.modules.waynames.get_mesh(meshgroup);
+        this.modules.wayshapes.get_mesh(meshgroup);
         for(way in this.items){
             try {
-                if(this.items[way].nodes[0]===this.items[way].nodes[nds.length-1]){
-                    //Shape
-                    var shape = CMesh(CShape(this.items[way].points), Math.round(Math.random()*0xffffff));
-                    shape.position.z+=0.001*this.items[way].ver;
-                    meshgroup.add( shape );
-                } else {
-                    //Path
-                    wayshapes.push(CPath(this.items[way].points));
-                }
+
+                //Path
+                wayshapes.push(CPath(this.items[way].points));
             } catch (e){
                 console.warn(e);
             }
@@ -63,6 +61,7 @@ function Ways(){
 
     this.to_render = function(camera){
         this.modules.waynames.to_render(camera);
+        this.modules.wayshapes.to_render(camera);
     }
 }
 modules.ways = new Ways();
