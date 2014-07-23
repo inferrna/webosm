@@ -62,14 +62,14 @@ function CText(text, color){
 function CTexturedText(text, color){
     var bitmap = document.createElement('canvas');
     var ctx = bitmap.getContext('2d');
-    bitmap.height = 32;
+    bitmap.height = 32*4;
     bitmap.width = bitmap.height*text.length;
     /*ctx.width = ctx.width;
     ctx.translate(0, bitmap.height);
     ctx.scale(1, -1);*/
     ctx.font = "40px 'Helvetica'";
-    var h = bitmap.height/100;
-    var w = bitmap.width/100;
+    var h = bitmap.height/4;
+    var w = bitmap.width/4;
     ctx.rect(0, 0, bitmap.width, bitmap.height);
     ctx.fillStyle = "rgba(255, 120, 240, 0.0)";;
     ctx.fill();
@@ -84,6 +84,7 @@ function CTexturedText(text, color){
     texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.needsUpdate = true;
     texture.anisotropy = anisotropy;
+    console.log("anisotropy == "+anisotropy);
     /*var points = [[0,0],
                   [0,h],
                   [w,h],

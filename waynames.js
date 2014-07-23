@@ -1,5 +1,5 @@
 function Waynames(){
-    this.names = {};
+    this.items = {};
     this.p = modules.ways;
     this.parse_itm = function(itm, node){
         for(var i=0; i<node.children.length; i++){
@@ -8,38 +8,48 @@ function Waynames(){
             if(child.tagName==='tag'){
                 var k = child.getAttribute("k");
                 if(k==='name') {
-                    this.names[id] = {};
-                    this.names[id].nm = child.getAttribute("v");
-                    this.names[id].ver = itm.ver;
-                    this.names[id].points = itm.points;
+                    this.items[id] = {};
+                    this.items[id].nm = child.getAttribute("v");
+                    this.items[id].ver = itm.ver;
+                    this.items[id].points = itm.points;
                     return 1;
                 }
             }
         }
     }
     this.get_mesh = function(meshgroup){
-        for(way in this.names){
-            this.names[way].mesh = CTexturedText(this.names[way].nm, 0xffffff);
-            meshgroup.add( this.names[way].mesh );
-            this.names[way].mesh.position.z+=0.001;
+        for(way in this.items){
+            this.items[way].mesh = CTexturedText(this.items[way].nm, 0xffffff);
+            meshgroup.add( this.items[way].mesh );
+            this.items[way].mesh.position.z+=0.001;
         }
     }
     this.to_render = function(camera){
-        for(way in this.names){
-            var kv = nearest(this.names[way].points, [camera.position.x, camera.position.y]);
-            //console.log(kv);
-            var k = kv[0];
-            var l = k===0 ? 1 : k - 1;
-            var m = this.names[way].points[k > l ? k : l];
-            var n = this.names[way].points[k > l ? l : k];
-            var pos = linedist(m, n, [camera.position.x, camera.position.y]);
-            var angle = Math.atan((m[1]-n[1])/(m[0]-n[0]));
-            var scale = Math.min(Math.round(Math.abs(camera.position.z/8)), 8) || 1;
-            var angle = Math.round((camera.rotation.z-angle)/Math.PI) == 0 ? angle : angle + Math.PI;
-            this.names[way].mesh.scale.set(scale, scale, 1);
-            this.names[way].mesh.position.x = pos[0];
-            this.names[way].mesh.position.y = pos[1];
-            this.names[way].mesh.rotation.z = angle;
+        for(way in this.items){
+            if(camera.position.z > 100){
+                this.items[way].mesh.visible = false;
+            } else {
+                var kv = nearest(this.items[way].points, [camera.position.x, camera.position.y]);
+                //if(!kv[2] || kv[2] === undefined) return;
+                if(kv[2]>64) {
+                    this.items[way].mesh.visible = false;
+                    continue;
+                } else {
+                    var k = kv[0];
+                    var l = k===0 ? 1 : k - 1;
+                    var m = this.items[way].points[k > l ? k : l];
+                    var n = this.items[way].points[k > l ? l : k];
+                    var pos = linedist(m, n, [camera.position.x, camera.position.y]);
+                    var angle = Math.atan((m[1]-n[1])/(m[0]-n[0]));
+                    var scale = (Math.min(Math.round(Math.pow(camera.position.z/6, 2)), 8) || 1)/16;
+                    var angle = Math.round((camera.rotation.z-angle)/Math.PI) == 0 ? angle : angle + Math.PI;
+                    this.items[way].mesh.scale.set(scale, scale, 1);
+                    this.items[way].mesh.position.x = pos[0];
+                    this.items[way].mesh.position.y = pos[1];
+                    this.items[way].mesh.rotation.z = angle;
+                    this.items[way].mesh.visible = true;
+                }
+            }
         }
     }
 }

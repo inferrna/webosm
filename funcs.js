@@ -61,7 +61,7 @@ function nearest(points, point){
     var trend = 0;
     for(var i=0; i<points.length; i++){
         diff = diff2d(points[i], point);
-        dist = Math.pow(diff[0], 2)+Math.pow(diff[1], 2);
+        dist = (Math.pow(diff[0], 2)+Math.pow(diff[1], 2));
         if(dist<min){
             lastmin = min;
             min = dist;
@@ -73,14 +73,15 @@ function nearest(points, point){
     }
     //return [j, points[j]];
     if(j===0 || j===points.length-1) {
-        return [j, points[j]];
+        return [j, points[j], min];
     }
-    var near = Math.min(lastmin, nextmin);
+    var near = Math.sqrt(Math.min(lastmin, nextmin));
+    min = Math.sqrt(min);
     var sign = lastmin > nextmin ? 1: -1;
     var c = min/(near+min);
     var _res = diff2d(points[j], points[j+sign]);
     var res = [points[j][0] + sign*_res[0]*c, points[j][1] + sign*_res[1]*c];
-    return [j, res];
+    return [j, res, min];
 }
 
 function simpleperp(v, desired_length) {

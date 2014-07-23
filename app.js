@@ -74,7 +74,7 @@ function draw_scene(){
     renderer.sortObjects = false;
     renderer.setClearColor( 0xaaaaaa );
     renderer.setSize( window.innerWidth, window.innerHeight );
-    anisotropy = (renderer.getMaxAnisotropy() - 2) || 2;
+    anisotropy = Math.pow(2, Math.log2(renderer.getMaxAnisotropy())-1);
     document.body.appendChild( renderer.domElement );
     var rectWidth = 8;
     var rectLength = -10;
