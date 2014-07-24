@@ -22,9 +22,9 @@ function Ways(){
             }
             tmpway.nodes = new Uint32Array(nds);
             tmpway.points = waypoints;
-            this.modules.waynames.parse_itm(tmpway, way);
-            this.modules.wayshapes.parse_itm(tmpway, way);
-            this.modules.wayfootways.parse_itm(tmpway, way);
+            for(mid in this.modules){
+                this.modules[mid].parse_itm(tmpway, way);
+            }
             /*for(var i=0; i<way.children.length; i++){
                 child = way.children[i];
                 if(child.tagName==='tag'){
@@ -46,9 +46,9 @@ function Ways(){
 
     this.get_mesh = function(meshgroup){
         var wayshapes = [];
-        this.modules.waynames.get_mesh(meshgroup);
-        this.modules.wayshapes.get_mesh(meshgroup);
-        this.modules.wayfootways.get_mesh(meshgroup);
+        for(mid in this.modules){
+            this.modules[mid].get_mesh(meshgroup);
+        }
         for(way in this.items){
             try {
 
@@ -62,9 +62,9 @@ function Ways(){
     }
 
     this.to_render = function(camera){
-        this.modules.waynames.to_render(camera);
-        this.modules.wayshapes.to_render(camera);
-        this.modules.wayfootways.to_render(camera);
+        for(mid in this.modules){
+            this.modules[mid].to_render(camera);
+        }
     }
 }
 modules.ways = new Ways();

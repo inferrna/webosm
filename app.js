@@ -39,24 +39,7 @@ function parse_nodes(map){
     console.log("Nodes done");
     modules.ways.from_xml(xml);
     console.log("Ways done");
-    results = evaluateXPath(xml, "/osm/way[tag/@k='building']");
-    while(way = results.iterateNext()){
-        //if(parseInt(way.getAttribute("version"))>3) continue;
-        id = parseInt(way.getAttribute("id"));
-        lvl = 1;
-        buildings[id] = {};
-        nds = [];
-        for(var i=0; i<way.children.length; i++){
-            child = way.children[i];
-            if(child.tagName==='nd') nds.push(parseInt(child.getAttribute("ref")));
-            else if(child.tagName==='tag')
-                    if(child.getAttribute("k")==='building:levels') lvl = parseInt(child.getAttribute("v"));
-        }
-        buildings[id].lvl = lvl;
-        buildings[id].nodes = new Uint32Array(nds);
-        delete way;
-    }
-    delete results;
+    modules.buildings.from_xml(xml);
     console.log("Buildings done");
     //console.log(ways);
     //console.log(nds);
@@ -90,27 +73,8 @@ function draw_scene(){
    // scene.add( mshape );
    // scene.add( textMesh );
     var i, nds, way, waypoints, ref, j=0;
-    //console.log(ways);
-    //meshgroup.add( modules.ways.get_mesh(scene) );
     modules.ways.get_mesh(meshgroup);
-    var lvls = {};
-    for(way in buildings){
-        waypoints = [];
-        nds = buildings[way].nodes;
-        for(i=0; i<nds.length; i++){
-            ref = nds[i];
-            waypoints.push(nodes[ref]);
-        }
-        if(!lvls[buildings[way].lvl]) lvls[buildings[way].lvl] = [];
-        try {
-            lvls[buildings[way].lvl].push(CShape(waypoints));
-        } catch (e){
-            console.warn(e);
-        }
-        //if(j>9) break;
-        //j+=1;
-    }
-    for(lvl in lvls) meshgroup.add( CExtr(lvls[lvl], 0.001, Math.round(Math.random()*0xffffff), lvl) );
+    modules.buildings.get_mesh(meshgroup);
     scene.add( meshgroup );
     camera.position.z = 50;
     controls = new THREE.OrbitControls( camera, renderer.domElement );
@@ -133,13 +97,8 @@ function draw_scene(){
     var x = 0;
     function render() {
         requestAnimationFrame(render);
-        /*x+=0.03;
-        x = x%(2*Math.PI);
-        mshape.rotation.z += 0.01;
-        mshape.rotation.x += 0.01;
-        mshape.rotation.y += 0.01;
-        camera.position.z += 0.4*Math.sin(x); */
         modules.ways.to_render(camera);
+        modules.buildings.to_render(camera);
         renderer.render(scene, camera); 
         controls.update();
     } 
