@@ -2,8 +2,8 @@ function Wayshapes(){
     this.items = {};
     this.p = modules.ways;
     this.parse_itm = function(itm, node){
-        if(itm.nodes[0] === itm.nodes[itm.nodes.length-1]){
-            var id = node.getAttribute("id");
+        var id = node.getAttribute("id");
+        if( processed.ways.indexOf(id)===-1 && itm.nodes[0] === itm.nodes[itm.nodes.length-1]){
             this.items[id] = itm;
             processed.ways.push(id);
         }

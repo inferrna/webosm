@@ -19,6 +19,33 @@ function CPath(points){
     rectShape.lineTo(points[0][0]-moves[0][0], points[0][1]-moves[0][1]);
     return rectShape;
 }
+function CLine(points){
+    var geometry = new THREE.Geometry();
+    for(var i=0; i<points.length; i++){
+        geometry.vertices.push(new THREE.Vector3( points[i][0], points[i][1], 0 ));    
+    }
+    geometry.computeLineDistances();
+    geometry.computeBoundingSphere();
+    geometry.computeBoundingBox();
+    return geometry;
+}
+function CBorder(points){
+    var thinu, thinb, _thin = 1;
+    var geometry = new THREE.Geometry();
+    for(var i=0; i<points.length-1; i++){
+        thinu = (i%2) * _thin;
+        thinb = ((i+1)%2) * _thin;
+        geometry.vertices.push(new THREE.Vector3( points[i][0], points[i][1], thinu ));    
+        geometry.vertices.push(new THREE.Vector3( points[i+1][0], points[i+1][1], thinu ));    
+        geometry.vertices.push(new THREE.Vector3( points[i][0], points[i][1], thinb ));
+        geometry.faces.push( new THREE.Face3( i*3+0, i*3+1, i*3+2 ) );
+    }
+    geometry.computeBoundingSphere();
+    geometry.computeBoundingBox();
+    geometry.computeFaceNormals();
+    console.log(geometry);
+    return geometry;
+}
 function CShape(points){
     //console.log("Shape from");
     //console.log(points);
@@ -85,27 +112,6 @@ function CTexturedText(text, color){
     texture.needsUpdate = true;
     texture.anisotropy = anisotropy;
     console.log("anisotropy == "+anisotropy);
-    /*var points = [[0,0],
-                  [0,h],
-                  [w,h],
-                  [w,0],
-                  [0,0]];
-    var rectShape = new THREE.Shape();
-    rectShape.moveTo(points[0][0], points[0][1]);
-    for(var i=1; i<points.length; i++){
-        rectShape.lineTo(points[i][0], points[i][1]);
-    }
-    var rectGeom = new THREE.ShapeGeometry( rectShape );
-    var vcs = [new THREE.Vector2( 0, 1 ),
-               new THREE.Vector2( 1, 1 ),
-               new THREE.Vector2( 1, 0 ),
-               new THREE.Vector2( 0, 0 )];
-    rectGeom.faceVertexUvs[ 0 ][0] =[vcs[0],
-    vcs[1],
-    vcs[2]];
-    rectGeom.faceVertexUvs[ 0 ][1] =[vcs[2],
-    vcs[3],
-    vcs[0]]; */
     var rectGeom = new THREE.PlaneGeometry(w, h);
     var rectMesh = new THREE.Mesh( rectGeom, new THREE.MeshPhongMaterial( { color: 0xfffeed, map: texture, transparent: true } ) ) ;
     delete ctx; delete bitmap;

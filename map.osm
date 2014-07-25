@@ -261,7 +261,7 @@
   <nd ref="1498413293"/>
   <tag k="addr:housenumber" v="8"/>
   <tag k="addr:street" v="улица Бограда"/>
-  <tag k="building" v="yes"/>
+  <tag k="barrier" v="wall"/>
  </way>
  <way id="136584800" visible="true" version="2" changeset="10104744" timestamp="2011-12-13T03:20:14Z" user="AMDmi3" uid="133332">
   <nd ref="1498413094"/>
