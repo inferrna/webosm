@@ -1,6 +1,7 @@
 var nodes = {};
 var buildings = {};
 var waynames = {};
+var params = {};
 var anisotropy;
 // canvas contents will be used for a texture
 // var texture = new THREE.Texture(bitmap) 
@@ -26,6 +27,9 @@ function parse_nodes(map){
     var clat = maxlat-minlat;
     var coeff = 500000;
     console.log("coeff == "+coeff);
+    console.log("clon == "+clon);
+    console.log("clat == "+clat);
+    console.log("cf == "+coeff*(clon+clat)/2);
     var results = evaluateXPath(xml, "/osm/node");
     var id, lon, lat, nd, ver, lvl, _lvl, _name, name;
     while(nd = results.iterateNext()){

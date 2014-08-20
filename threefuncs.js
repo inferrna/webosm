@@ -1,7 +1,7 @@
-function CPath(points){
+function CPath(points, thin){
     //console.log("Path from");
     //console.log(points);
-    var v, thin = 0.2;
+    var v;
     var rectShape = new THREE.Shape();
     moves = [[0,0]];
     for(var i=1; i<points.length; i++){

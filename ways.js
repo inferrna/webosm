@@ -53,7 +53,7 @@ function Ways(){
             try {
 
                 //Path
-                wayshapes.push(CPath(this.items[way].points));
+                wayshapes.push(CPath(this.items[way].points, 0.8));
             } catch (e){
                 console.warn(e);
             }
