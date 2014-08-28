@@ -41,7 +41,7 @@ function Waynames(){
                     var n = this.items[way].points[k > l ? l : k];
                     var pos = linedist(m, n, [camera.position.x, camera.position.y]);
                     var angle = Math.atan((m[1]-n[1])/(m[0]-n[0]));
-                    var scale = (Math.min(Math.round(Math.pow(camera.position.z/6, 2)), 8) || 1)/16;
+                    var scale = (Math.min(Math.round(Math.pow(camera.position.z/12, 2)), 6) || 1)/16;
                     var angle = Math.round((camera.rotation.z-angle)/Math.PI) == 0 ? angle : angle + Math.PI;
                     this.items[way].mesh.scale.set(scale, scale, 1);
                     this.items[way].mesh.position.x = pos[0];

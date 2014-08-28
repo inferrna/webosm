@@ -24,7 +24,7 @@ function Wayfootways(){
     this.get_mesh = function(meshgroup){
         var wayshapes = [];
         for(way in this.items){
-            wayshapes.push(CPath(this.items[way].points));
+            wayshapes.push(CPath(this.items[way].points, 0.3));
         }
         meshgroup.add( CMesh(wayshapes, 0xffaa66) );
     }
